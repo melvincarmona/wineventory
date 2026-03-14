@@ -33,6 +33,8 @@ const ColourPip = ({ colour }) => {
 const Spinner = () => <span style={{ display:"inline-block", width:16, height:16, border:"2px solid rgba(196,168,130,0.3)", borderTopColor:"#c4a882", borderRadius:"50%", animation:"spin 0.8s linear infinite" }}/>;
 
 // ── AI Search Hook ──────────────────────────────────────────────────────────
+// NOTE: web_search tool is not available from the browser — uses Claude's
+// built-in wine knowledge instead, which is extensive and accurate.
 function useAISearch() {
   const [results, setResults] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -47,12 +49,12 @@ function useAISearch() {
         body: JSON.stringify({
           model: "claude-sonnet-4-20250514",
           max_tokens: 1000,
-          tools: [{ type: "web_search_20250305", name: "web_search" }],
-          system: `Du bist ein Weinexperte. Suche im Internet nach dem gewünschten Wein und gib EXAKT 3 passende Vorschläge als JSON-Array zurück.
+          system: `Du bist ein Weinexperte mit umfangreichem Wissen über Weine weltweit.
+Gib EXAKT 3 passende Weinvorschläge als JSON-Array zurück.
 Antworte NUR mit einem JSON-Array, KEIN Text davor oder danach, KEINE Markdown-Backticks.
 Format: [{"name":"Vollständiger Weinname","winery":"Weingut","year":2021,"colour":"red","country":"Italien","region":"Barolo DOCG","grape":"Nebbiolo","bestBetween":"2025–2035","price":"ca. CHF 45","description":"Kurze Beschreibung in einem Satz"}]
 Regeln: colour ist NUR "red", "white" oder "rosé". year ist eine Zahl. price in CHF wenn möglich.`,
-          messages: [{ role: "user", content: `Suche nach: "${q}"` }]
+          messages: [{ role: "user", content: `Suche nach Wein: "${q}"` }]
         })
       });
       const data = await res.json();
@@ -334,7 +336,7 @@ function AISearchPanel({ onApply, onDismiss }) {
           {loading ? <Spinner /> : "Suchen"}
         </button>
       </div>
-      {loading && <div style={{ textAlign: "center", color: "#6a4020", fontStyle: "italic", fontSize: "0.88rem", padding: "8px 0" }}>Suche im Internet nach Weininfos…</div>}
+      {loading && <div style={{ textAlign: "center", color: "#6a4020", fontStyle: "italic", fontSize: "0.88rem", padding: "8px 0" }}>KI sucht Weininfos…</div>}
       {results.length > 0 && (
         <div style={{ border: "1px solid #3a2010", borderRadius: 12, overflow: "hidden", marginBottom: 8 }}>
           {results.map((r, i) => (
