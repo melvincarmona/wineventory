@@ -1,2 +1,1 @@
-# wineventory
-  # Treasures of EB20
+# wineventory - treasures of EB20
