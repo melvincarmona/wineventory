@@ -107,42 +107,37 @@ const StatCard = ({ icon, value, label, valueColor }) => (
   </div>
 );
 
-// ── AI Search Hook ──────────────────────────────────────────────────────────
+// ── AI Search Hook (via Vercel Serverless Function /api/wine-search) ────────
 function useAISearch() {
   const [results, setResults] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
 
   const search = useCallback(async (q) => {
-    if (!q || q.length < 3) { setResults([]); return; }
+    if (!q || q.length < 2) { setResults([]); return; }
     setLoading(true);
+    setError(null);
     try {
-      const res = await fetch("https://api.anthropic.com/v1/messages", {
-        method:"POST",
-        headers:{ "Content-Type":"application/json" },
-        body: JSON.stringify({
-          model:"claude-sonnet-4-20250514",
-          max_tokens:1000,
-          system:`Du bist ein Weinexperte mit umfangreichem Wissen über Weine weltweit.
-Gib EXAKT 3 passende Weinvorschläge als JSON-Array zurück.
-Antworte NUR mit einem JSON-Array, KEIN Text davor oder danach, KEINE Markdown-Backticks.
-Format: [{"name":"Vollständiger Weinname","winery":"Weingut","year":2021,"colour":"red","country":"Italien","region":"Piemont","grape":"Nebbiolo","bestBetween":"2025–2035","price":"ca. CHF 45","description":"Kurze Beschreibung in einem Satz"}]
-Regeln: colour ist NUR "red", "white", "rosé" oder "sparkling". year ist eine Zahl. price in CHF wenn möglich.`,
-          messages:[{ role:"user", content:`Suche nach Wein: "${q}"` }]
-        })
+      const res = await fetch("/api/wine-search", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ query: q }),
       });
       const data = await res.json();
-      const text = (data.content || []).filter(b => b.type === "text").map(b => b.text).join("");
-      const clean = text.replace(/```json|```/g,"").trim();
-      const s = clean.indexOf("["), e = clean.lastIndexOf("]");
-      if (s !== -1 && e !== -1) {
-        const parsed = JSON.parse(clean.slice(s, e + 1));
-        setResults(Array.isArray(parsed) ? parsed : []);
-      } else { setResults([]); }
-    } catch { setResults([]); }
+      if (data.results && Array.isArray(data.results)) {
+        setResults(data.results);
+      } else {
+        setResults([]);
+        setError("Keine Ergebnisse gefunden.");
+      }
+    } catch {
+      setResults([]);
+      setError("Verbindungsfehler. Bitte nochmals versuchen.");
+    }
     setLoading(false);
   }, []);
 
-  return { results, loading, search, clear: () => setResults([]) };
+  return { results, loading, error, search, clear: () => { setResults([]); setError(null); } };
 }
 
 // ── Main App ────────────────────────────────────────────────────────────────
@@ -150,6 +145,7 @@ export default function App() {
   const [tab, setTab] = useState("inventory");
   const [wines, setWines] = useState([]);
   const [wishlist, setWishlist] = useState([]);
+  const [drunkLog, setDrunkLog] = useState([]);
   const [loading, setLoading] = useState(true);
   const [modal, setModal] = useState(null);
 
@@ -157,13 +153,49 @@ export default function App() {
 
   async function loadAll() {
     setLoading(true);
-    const [w, wl] = await Promise.all([
+    const [w, wl, dl] = await Promise.all([
       supabase.from("wines").select("*").order("name"),
       supabase.from("wishlist").select("*").order("name"),
+      supabase.from("drunk_log").select("*").order("drunk_at", { ascending: false }),
     ]);
     if (w.data) setWines(w.data);
     if (wl.data) setWishlist(wl.data);
+    if (dl.data) setDrunkLog(dl.data);
     setLoading(false);
+  }
+
+  async function markAsDrunk(wine, logData) {
+    // Add to drunk_log
+    const entry = {
+      name:         wine.name,
+      colour:       wine.colour,
+      year:         wine.year,
+      winery:       wine.winery,
+      country:      wine.country,
+      region:       wine.region,
+      grape:        wine.grape,
+      occasion:     wine.occasion,
+      drunk_at:     new Date().toISOString().slice(0,10),
+      rating:       logData.rating ? Number(logData.rating) : null,
+      tasting_note: logData.tasting_note || null,
+    };
+    await supabase.from("drunk_log").insert([entry]);
+
+    // Reduce bottle count or remove wine
+    const newAmount = Number(wine.amount) - 1;
+    if (newAmount <= 0) {
+      await supabase.from("wines").delete().eq("id", wine.id);
+    } else {
+      await supabase.from("wines").update({ amount: newAmount }).eq("id", wine.id);
+    }
+    await loadAll();
+    setModal(null);
+  }
+
+  async function deleteDrunkEntry(id) {
+    await supabase.from("drunk_log").delete().eq("id", id);
+    await loadAll();
+    setModal(null);
   }
 
   async function saveWine(form, id) {
@@ -252,9 +284,9 @@ export default function App() {
         </div>
         {/* Tabs */}
         <div style={{ display:"flex", padding:"0 4px" }}>
-          {[["inventory","🍾  Keller"],["wishlist","✨  Wunschliste"]].map(([key, label]) => (
-            <button key={key} onClick={() => setTab(key)} style={{ flex:1, padding:"10px 8px", background:"none", border:"none", color: tab === key ? "#fff" : "rgba(255,255,255,0.42)", fontFamily:"'Cinzel',serif", fontSize:"0.68rem", letterSpacing:"0.1em", textTransform:"uppercase", cursor:"pointer", borderBottom: tab === key ? "2px solid rgba(255,255,255,0.75)" : "2px solid transparent", transition:"all 0.2s" }}>
-              {label} ({key === "inventory" ? wines.length : wishlist.length})
+          {[["inventory","🍾 Keller"],["wishlist","✨ Wunschliste"],["drunk","📖 Tagebuch"]].map(([key, label]) => (
+            <button key={key} onClick={() => setTab(key)} style={{ flex:1, padding:"10px 4px", background:"none", border:"none", color: tab === key ? "#fff" : "rgba(255,255,255,0.42)", fontFamily:"'Cinzel',serif", fontSize:"0.62rem", letterSpacing:"0.06em", textTransform:"uppercase", cursor:"pointer", borderBottom: tab === key ? "2px solid rgba(255,255,255,0.75)" : "2px solid transparent", transition:"all 0.2s" }}>
+              {label} ({key === "inventory" ? wines.length : key === "wishlist" ? wishlist.length : drunkLog.length})
             </button>
           ))}
         </div>
@@ -266,7 +298,9 @@ export default function App() {
           ? <div style={{ textAlign:"center", padding:60, color:CLR.textMuted, fontStyle:"italic" }}>Keller wird geladen…</div>
           : tab === "inventory"
             ? <InventoryView wines={wines} onView={w => setModal({ type:"viewWine", payload:w })} />
-            : <WishlistView wishlist={wishlist} onView={w => setModal({ type:"viewWish", payload:w })} />
+            : tab === "wishlist"
+            ? <WishlistView wishlist={wishlist} onView={w => setModal({ type:"viewWish", payload:w })} />
+            : <DrunkLogView drunkLog={drunkLog} onView={e => setModal({ type:"viewDrunk", payload:e })} />
         }
       </div>
 
@@ -275,8 +309,10 @@ export default function App() {
       {modal?.type === "editWine" && <WineFormSheet  title="Wein bearbeiten"   init={modal.payload} onSave={f => saveWine(f, modal.payload.id)} onClose={() => setModal(null)} />}
       {modal?.type === "addWish"  && <WishFormSheet  title="Wunsch hinzufügen" init={BLANK_WISH}    onSave={f => saveWish(f, null)}             onClose={() => setModal(null)} isNew />}
       {modal?.type === "editWish" && <WishFormSheet  title="Wunsch bearbeiten" init={modal.payload} onSave={f => saveWish(f, modal.payload.id)} onClose={() => setModal(null)} />}
-      {modal?.type === "viewWine" && <WineDetailSheet wine={modal.payload} onEdit={w => setModal({ type:"editWine", payload:w })} onDelete={() => deleteWine(modal.payload.id)} onClose={() => setModal(null)} />}
+      {modal?.type === "viewWine" && <WineDetailSheet wine={modal.payload} onEdit={w => setModal({ type:"editWine", payload:w })} onDelete={() => deleteWine(modal.payload.id)} onDrink={w => setModal({ type:"drinkWine", payload:w })} onClose={() => setModal(null)} />}
       {modal?.type === "viewWish" && <WishDetailSheet wish={modal.payload} onEdit={w => setModal({ type:"editWish", payload:w })} onDelete={() => deleteWish(modal.payload.id)} onMove={() => moveToInventory(modal.payload)} onClose={() => setModal(null)} />}
+      {modal?.type === "drinkWine" && <DrinkLogSheet wine={modal.payload} onSave={(w, d) => markAsDrunk(w, d)} onClose={() => setModal(null)} />}
+      {modal?.type === "viewDrunk" && <DrunkEntrySheet entry={modal.payload} onDelete={() => deleteDrunkEntry(modal.payload.id)} onClose={() => setModal(null)} />}
     </div>
   );
 }
@@ -419,7 +455,7 @@ function WishlistView({ wishlist, onView }) {
 // ── AI Search Panel ─────────────────────────────────────────────────────────
 function AISearchPanel({ onApply, onDismiss }) {
   const [query, setQuery] = useState("");
-  const { results, loading, search, clear } = useAISearch();
+  const { results, loading, error, search, clear } = useAISearch();
 
   return (
     <div style={{ padding:"14px 20px", borderBottom:`0.5px solid ${CLR.border}`, background:CLR.iconCircle }}>
@@ -430,7 +466,8 @@ function AISearchPanel({ onApply, onDismiss }) {
           {loading ? <Spinner/> : "Suchen"}
         </button>
       </div>
-      {loading && <div style={{ textAlign:"center", color:CLR.textMuted, fontStyle:"italic", fontSize:"0.88rem", padding:"6px 0" }}>Suche Weininfos…</div>}
+      {loading && <div style={{ textAlign:"center", color:CLR.textMuted, fontStyle:"italic", fontSize:"0.88rem", padding:"6px 0" }}>KI sucht Weininfos…</div>}
+      {error && <div style={{ textAlign:"center", color:"#c03030", fontSize:"0.82rem", padding:"4px 0 8px", fontStyle:"italic" }}>{error}</div>}
       {results.length > 0 && (
         <div style={{ border:`0.5px solid ${CLR.border}`, borderRadius:12, overflow:"hidden", marginBottom:8, background:CLR.cardBg }}>
           {results.map((r, i) => (
@@ -529,7 +566,7 @@ function WineFormSheet({ title, init, onSave, onClose, isNew }) {
 }
 
 // ── Wine Detail Sheet ───────────────────────────────────────────────────────
-function WineDetailSheet({ wine, onEdit, onDelete, onClose }) {
+function WineDetailSheet({ wine, onEdit, onDelete, onDrink, onClose }) {
   const [confirmDel, setConfirmDel] = useState(false);
   return (
     <div className="sheet" onClick={e => { if (e.target === e.currentTarget) onClose(); }}>
@@ -559,6 +596,9 @@ function WineDetailSheet({ wine, onEdit, onDelete, onClose }) {
               <div style={{ color:CLR.textMuted, fontStyle:"italic", fontSize:"0.92rem", lineHeight:1.6 }}>{wine.rationale}</div>
             </div>
           )}
+          <button className="btn btn-move" onClick={() => onDrink(wine)} style={{ width:"100%", marginBottom:9 }}>
+            🍷 Flasche austrinken
+          </button>
           <div style={{ display:"flex", gap:8 }}>
             <button className="btn btn-primary" onClick={() => onEdit(wine)} style={{ flex:1 }}>Bearbeiten</button>
             <button className="btn btn-danger" onClick={() => confirmDel ? onDelete() : setConfirmDel(true)} style={{ flex:1 }}>
@@ -701,6 +741,192 @@ function WishDetailSheet({ wish, onEdit, onDelete, onMove, onClose }) {
               {confirmDel ? "Sicher?" : "Löschen"}
             </button>
           </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── Drunk Log View ──────────────────────────────────────────────────────────
+function DrunkLogView({ drunkLog, onView }) {
+  const STARS = [1,2,3,4,5];
+
+  return (
+    <>
+      <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:16 }}>
+        <div>
+          <div style={{ fontFamily:"'Cinzel',serif", fontSize:"0.7rem", letterSpacing:"0.1em", color:CLR.textMuted, textTransform:"uppercase" }}>Weintagebuch</div>
+          <div style={{ fontSize:"0.85rem", color:CLR.textFaint, marginTop:2 }}>{drunkLog.length} Flaschen getrunken</div>
+        </div>
+      </div>
+
+      {drunkLog.length === 0 && (
+        <div style={{ textAlign:"center", padding:40, color:CLR.border, fontStyle:"italic" }}>
+          Noch nichts eingetragen. Öffne eine Flasche und tippe auf «Austrinken»!
+        </div>
+      )}
+
+      {drunkLog.map(e => (
+        <div key={e.id} className="card" onClick={() => onView(e)}>
+          <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", gap:10 }}>
+            <div style={{ flex:1, minWidth:0 }}>
+              <div style={{ fontFamily:"'Cinzel',serif", fontSize:"0.9rem", fontWeight:500, color:CLR.textPrimary, marginBottom:2, whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis" }}>{e.name}</div>
+              <div style={{ fontSize:"0.82rem", color:CLR.textMuted, marginBottom:6 }}>{[e.winery, e.year, e.country].filter(Boolean).join(" · ")}</div>
+              {e.rating && (
+                <div style={{ display:"flex", gap:2, marginBottom:5 }}>
+                  {STARS.map(s => (
+                    <span key={s} style={{ fontSize:"0.75rem", color: s <= e.rating ? "#e8c020" : CLR.borderLight }}>★</span>
+                  ))}
+                </div>
+              )}
+              {e.tasting_note && (
+                <div style={{ fontSize:"0.78rem", color:CLR.textFaint, fontStyle:"italic", whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis" }}>"{e.tasting_note}"</div>
+              )}
+            </div>
+            <div style={{ flexShrink:0, textAlign:"right" }}>
+              <div style={{ fontSize:"0.72rem", color:CLR.textMuted, background:CLR.iconCircle, border:`0.5px solid ${CLR.border}`, borderRadius:7, padding:"3px 8px", whiteSpace:"nowrap" }}>
+                {new Date(e.drunk_at).toLocaleDateString("de-CH", { day:"2-digit", month:"2-digit", year:"numeric" })}
+              </div>
+
+            </div>
+          </div>
+        </div>
+      ))}
+    </>
+  );
+}
+
+// ── Drink Log Sheet ─────────────────────────────────────────────────────────
+function DrinkLogSheet({ wine, onSave, onClose }) {
+  const [form, setForm] = useState({ rating: "", tasting_note: "" });
+  const [saving, setSaving] = useState(false);
+  const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
+  const STARS = [1, 2, 3, 4, 5];
+
+  async function handleSave() {
+    setSaving(true);
+    await onSave(wine, form);
+    setSaving(false);
+  }
+
+  return (
+    <div className="sheet" onClick={e => { if (e.target === e.currentTarget) onClose(); }}>
+      <div className="sheet-inner">
+        <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", padding:"20px 20px 14px", borderBottom:`0.5px solid ${CLR.border}` }}>
+          <div>
+            <h2 style={{ fontFamily:"'Cinzel',serif", fontSize:"1rem", color:CLR.forest, margin:"0 0 3px", letterSpacing:"0.05em" }}>Flasche austrinken</h2>
+            <div style={{ fontSize:"0.85rem", color:CLR.textMuted }}>{wine.name}{wine.year ? ` · ${wine.year}` : ""}</div>
+          </div>
+          <button onClick={onClose} style={{ background:"none", border:"none", color:CLR.textMuted, fontSize:"1.5rem", cursor:"pointer" }}>×</button>
+        </div>
+
+        <div style={{ padding:"16px 20px", display:"grid", gap:14 }}>
+
+          {/* Star rating */}
+          <div>
+            <label className="label">Bewertung</label>
+            <div style={{ display:"flex", gap:10, padding:"8px 0" }}>
+              {STARS.map(s => (
+                <button key={s} onClick={() => set("rating", form.rating === s ? "" : s)}
+                  style={{ background:"none", border:"none", cursor:"pointer", padding:0, fontSize:"2rem", color: s <= Number(form.rating) ? "#e8c020" : CLR.borderLight, transition:"color 0.15s" }}>★</button>
+              ))}
+            </div>
+            {form.rating && (
+              <button onClick={() => set("rating", "")} style={{ background:"none", border:"none", cursor:"pointer", fontSize:"0.73rem", color:CLR.textFaint, fontFamily:"'Cinzel',serif", textDecoration:"underline", padding:0 }}>
+                Bewertung zurücksetzen
+              </button>
+            )}
+          </div>
+
+          {/* Tasting note */}
+          <div>
+            <label className="label">Degustationsnotiz</label>
+            <textarea rows={4} value={form.tasting_note} onChange={e => set("tasting_note", e.target.value)}
+              placeholder="Aromen, Struktur, Abgang, Speisepaarung, persönliche Eindrücke…"/>
+          </div>
+
+          {/* Info about bottle count */}
+          <div style={{ background:CLR.iconCircle, border:`0.5px solid ${CLR.border}`, borderRadius:9, padding:"10px 14px", fontSize:"0.82rem", color:CLR.textMuted }}>
+            {Number(wine.amount) > 1
+              ? `Anzahl wird von ${wine.amount} auf ${Number(wine.amount) - 1} reduziert.`
+              : "Diese letzte Flasche wird aus dem Inventar entfernt."
+            }
+          </div>
+
+          <div style={{ display:"flex", gap:10, paddingBottom:4 }}>
+            <button className="btn btn-primary" onClick={handleSave} disabled={saving} style={{ flex:1 }}>
+              {saving ? <Spinner/> : "Ins Tagebuch eintragen"}
+            </button>
+            <button className="btn btn-secondary" onClick={onClose} style={{ flex:1 }}>Abbrechen</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── Drunk Entry Detail Sheet ────────────────────────────────────────────────
+function DrunkEntrySheet({ entry, onDelete, onClose }) {
+  const [confirmDel, setConfirmDel] = useState(false);
+  const STARS = [1,2,3,4,5];
+  const COLOUR_MAP = { red:"#7c1d1d", white:"#d4a84b", rosé:"#e879a0", sparkling:"#e8c020" };
+
+  return (
+    <div className="sheet" onClick={e => { if (e.target === e.currentTarget) onClose(); }}>
+      <div className="sheet-inner">
+        <div style={{ padding:"20px 20px 0", display:"flex", justifyContent:"space-between", alignItems:"flex-start" }}>
+          <div style={{ flex:1, paddingRight:12 }}>
+            <div style={{ fontFamily:"'Cinzel',serif", fontSize:"1.05rem", fontWeight:500, color:CLR.textPrimary, marginBottom:3, lineHeight:1.3 }}>{entry.name}</div>
+            <div style={{ fontSize:"0.85rem", color:CLR.textMuted }}>{[entry.winery, entry.year].filter(Boolean).join(" · ")}</div>
+          </div>
+          <button onClick={onClose} style={{ background:"none", border:"none", color:CLR.textMuted, fontSize:"1.5rem", cursor:"pointer" }}>×</button>
+        </div>
+
+        <div style={{ padding:"14px 20px" }}>
+          {/* Date + colour */}
+          <div style={{ display:"flex", gap:8, marginBottom:14, flexWrap:"wrap", alignItems:"center" }}>
+            <span style={{ fontSize:"0.78rem", background:CLR.iconCircle, border:`0.5px solid ${CLR.border}`, borderRadius:7, padding:"3px 10px", color:CLR.textMuted }}>
+              {new Date(entry.drunk_at).toLocaleDateString("de-CH", { day:"2-digit", month:"long", year:"numeric" })}
+            </span>
+            {entry.colour && (
+              <span style={{ display:"inline-flex", alignItems:"center", gap:5 }}>
+                <span style={{ width:9, height:9, borderRadius:"50%", background:COLOUR_MAP[entry.colour] || "#888", display:"inline-block" }}/>
+                <span style={{ fontSize:"0.82rem", color:CLR.textMuted }}>{entry.colour === "sparkling" ? "Schaumwein" : entry.colour === "red" ? "Rot" : entry.colour === "white" ? "Weiss" : "Rosé"}</span>
+              </span>
+            )}
+          </div>
+
+          {/* Stars */}
+          {entry.rating && (
+            <div style={{ marginBottom:14 }}>
+              <div className="label">Bewertung</div>
+              <div style={{ display:"flex", gap:4 }}>
+                {STARS.map(s => <span key={s} style={{ fontSize:"1.4rem", color: s <= entry.rating ? "#e8c020" : CLR.borderLight }}>★</span>)}
+              </div>
+            </div>
+          )}
+
+          {/* Details grid */}
+          <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:10, marginBottom:14 }}>
+            {[["Land", entry.country],["Region", entry.region],["Traube", entry.grape]].filter(([,v])=>v).map(([l,v]) => (
+              <div key={l} style={{ background:CLR.iconCircle, border:`0.5px solid ${CLR.border}`, borderRadius:9, padding:"9px 12px" }}>
+                <div className="label" style={{ marginBottom:3 }}>{l}</div>
+                <div style={{ color:CLR.textPrimary, fontSize:"0.9rem" }}>{v}</div>
+              </div>
+            ))}
+          </div>
+
+          {/* Tasting note */}
+          {entry.tasting_note && (
+            <div style={{ background:CLR.cardBg, border:`0.5px solid ${CLR.border}`, borderRadius:10, padding:"12px 14px", marginBottom:14 }}>
+              <div className="label">Degustationsnotiz</div>
+              <div style={{ color:CLR.textMuted, fontStyle:"italic", fontSize:"0.92rem", lineHeight:1.6 }}>{entry.tasting_note}</div>
+            </div>
+          )}
+
+          <button className="btn btn-danger" onClick={() => confirmDel ? onDelete() : setConfirmDel(true)} style={{ width:"100%" }}>
+            {confirmDel ? "Sicher löschen?" : "Eintrag löschen"}
+          </button>
         </div>
       </div>
     </div>
