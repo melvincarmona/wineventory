@@ -102,7 +102,7 @@ const StatCard = ({ icon, value, label, valueColor }) => (
     <div style={{ width:26, height:26, borderRadius:"50%", background:CLR.iconCircle, display:"flex", alignItems:"center", justifyContent:"center", margin:"0 auto 4px" }}>
       {icon}
     </div>
-    <div style={{ fontFamily:"'Playfair Display',serif", fontSize:"1.2rem", fontWeight:600, color:valueColor || CLR.textPrimary, lineHeight:1 }}>{value}</div>
+    <div style={{ fontFamily:"'Manrope',sans-serif", fontSize:"1.2rem", fontWeight:600, color:valueColor || CLR.textPrimary, lineHeight:1 }}>{value}</div>
     <div style={{ fontSize:"0.6rem", color:CLR.textFaint, textTransform:"uppercase", letterSpacing:"0.05em", marginTop:3 }}>{label}</div>
   </div>
 );
@@ -232,47 +232,47 @@ export default function App() {
   }
 
   return (
-    <div style={{ fontFamily:"'DM Sans',sans-serif", background:CLR.bg, minHeight:"100vh", color:CLR.textPrimary, maxWidth:480, margin:"0 auto" }}>
+    <div style={{ fontFamily:"'Manrope',sans-serif", background:CLR.bg, minHeight:"100vh", color:CLR.textPrimary, maxWidth:480, margin:"0 auto" }}>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500&family=Playfair+Display:wght@500;600&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;500;600;700&display=swap');
         @keyframes spin { to { transform:rotate(360deg) } }
         @keyframes fadeUp { from { opacity:0; transform:translateY(10px) } to { opacity:1; transform:none } }
         @keyframes slideIn { from { transform:translateY(100%) } to { transform:translateY(0) } }
         * { box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
         ::-webkit-scrollbar { width:3px } ::-webkit-scrollbar-track { background:${CLR.bg} } ::-webkit-scrollbar-thumb { background:${CLR.border}; border-radius:2px }
-        input, select, textarea { background:#f7fdf8 !important; border:1px solid ${CLR.border} !important; color:${CLR.textPrimary} !important; border-radius:10px; padding:11px 14px; width:100%; font-family:'DM Sans',sans-serif; font-size:1.05rem; outline:none; }
+        input, select, textarea { background:#f7fdf8 !important; border:1px solid ${CLR.border} !important; color:${CLR.textPrimary} !important; border-radius:10px; padding:11px 14px; width:100%; font-family:'Manrope',sans-serif; font-size:1.05rem; outline:none; }
         input:focus, select:focus, textarea:focus { border-color:${CLR.forest} !important; box-shadow:0 0 0 2px rgba(26,77,40,0.1) }
         select option { background:#f7fdf8 }
         .card { background:${CLR.cardBg}; border:0.5px solid ${CLR.border}; border-radius:14px; padding:14px 16px; margin-bottom:9px; cursor:pointer; animation:fadeUp 0.25s ease; transition:border-color 0.2s,transform 0.15s; }
         .card:active { transform:scale(0.985) }
         .card:hover { border-color:${CLR.forestMid} }
-        .btn { border:none; border-radius:12px; padding:13px 20px; font-family:'Playfair Display',serif; font-size:0.78rem; letter-spacing:0.08em; cursor:pointer; transition:all 0.2s; text-transform:uppercase; display:inline-flex; align-items:center; justify-content:center; gap:6px; }
+        .btn { border:none; border-radius:12px; padding:13px 20px; font-family:'Manrope',sans-serif; font-size:0.78rem; letter-spacing:0.08em; cursor:pointer; transition:all 0.2s; text-transform:uppercase; display:inline-flex; align-items:center; justify-content:center; gap:6px; }
         .btn-primary { background:${CLR.forest}; color:#fff; }
         .btn-primary:hover { background:${CLR.forestMid} }
         .btn-primary:disabled { opacity:0.5; cursor:not-allowed }
         .btn-secondary { background:${CLR.iconCircle}; color:${CLR.forest}; border:1px solid ${CLR.border} !important; }
         .btn-danger { background:rgba(192,48,48,0.1); color:#c03030; border:1px solid rgba(192,48,48,0.3) !important; }
         .btn-move { background:rgba(26,77,40,0.1); color:${CLR.forest}; border:1px solid ${CLR.border} !important; }
-        .label { font-family:'Playfair Display',serif; font-size:0.62rem; letter-spacing:0.12em; text-transform:uppercase; color:${CLR.textMuted}; margin-bottom:5px; display:block }
+        .label { font-family:'Manrope',sans-serif; font-size:0.62rem; letter-spacing:0.12em; text-transform:uppercase; color:${CLR.textMuted}; margin-bottom:5px; display:block }
         .sheet { position:fixed; inset:0; z-index:100; display:flex; flex-direction:column; justify-content:flex-end; background:rgba(0,0,0,0.55); }
         .sheet-inner { background:${CLR.bg}; border-top-left-radius:22px; border-top-right-radius:22px; border-top:1px solid ${CLR.border}; max-height:92vh; overflow-y:auto; animation:slideIn 0.3s cubic-bezier(0.32,0.72,0,1); padding-bottom:env(safe-area-inset-bottom,24px) }
         .suggestion { padding:12px 16px; border-bottom:0.5px solid ${CLR.borderLight}; cursor:pointer; transition:background 0.15s; }
         .suggestion:last-child { border-bottom:none }
         .suggestion:hover, .suggestion:active { background:${CLR.iconCircle} }
-        .filter-pill { flex:0 0 auto; padding:5px 13px; border-radius:99px; font-family:'Playfair Display',serif; font-size:0.72rem; cursor:pointer; white-space:nowrap; transition:all 0.15s; }
+        .filter-pill { flex:0 0 auto; padding:5px 13px; border-radius:99px; font-family:'Manrope',sans-serif; font-size:0.72rem; cursor:pointer; white-space:nowrap; transition:all 0.15s; }
       `}</style>
 
       {/* ── Header ── */}
       <div style={{ background:CLR.forest, borderBottom:`1px solid ${CLR.forestDark}`, position:"sticky", top:0, zIndex:10 }}>
         <div style={{ padding:"48px 20px 0" }}>
           {/* Subtitle */}
-          <div style={{ fontSize:"0.58rem", letterSpacing:"0.22em", color:"rgba(255,255,255,0.48)", textTransform:"uppercase", marginBottom:3, fontFamily:"'Playfair Display',serif" }}>
+          <div style={{ fontSize:"0.58rem", letterSpacing:"0.22em", color:"rgba(255,255,255,0.48)", textTransform:"uppercase", marginBottom:3, fontFamily:"'Manrope',sans-serif" }}>
             Bottled Treasures of EB20
           </div>
           {/* Title row */}
           <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:4 }}>
             <div>
-              <h1 style={{ fontFamily:"'Playfair Display',serif", fontSize:"1.75rem", fontWeight:600, color:"#fff", margin:0, letterSpacing:"0.15em", textTransform:"uppercase", lineHeight:1 }}>
+              <h1 style={{ fontFamily:"'Manrope',sans-serif", fontSize:"1.75rem", fontWeight:600, color:"#fff", margin:0, letterSpacing:"0.15em", textTransform:"uppercase", lineHeight:1 }}>
                 WINEVENTORY
               </h1>
             </div>
@@ -285,7 +285,7 @@ export default function App() {
         {/* Tabs */}
         <div style={{ display:"flex", padding:"0 4px" }}>
           {[["inventory","🍾 Cellar"],["wishlist","✨ Wishlist"],["drunk","💀 Graveyard"]].map(([key, label]) => (
-            <button key={key} onClick={() => setTab(key)} style={{ flex:1, padding:"10px 4px", background:"none", border:"none", color: tab === key ? "#fff" : "rgba(255,255,255,0.42)", fontFamily:"'Playfair Display',serif", fontSize:"0.62rem", letterSpacing:"0.06em", textTransform:"uppercase", cursor:"pointer", borderBottom: tab === key ? "2px solid rgba(255,255,255,0.75)" : "2px solid transparent", transition:"all 0.2s" }}>
+            <button key={key} onClick={() => setTab(key)} style={{ flex:1, padding:"10px 4px", background:"none", border:"none", color: tab === key ? "#fff" : "rgba(255,255,255,0.42)", fontFamily:"'Manrope',sans-serif", fontSize:"0.62rem", letterSpacing:"0.06em", textTransform:"uppercase", cursor:"pointer", borderBottom: tab === key ? "2px solid rgba(255,255,255,0.75)" : "2px solid transparent", transition:"all 0.2s" }}>
               {label} ({key === "inventory" ? wines.length : key === "wishlist" ? wishlist.length : drunkLog.length})
             </button>
           ))}
@@ -373,7 +373,7 @@ function InventoryView({ wines, onView }) {
         <div key={w.id} className="card" onClick={() => onView(w)}>
           <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", gap:10 }}>
             <div style={{ flex:1, minWidth:0 }}>
-              <div style={{ fontFamily:"'Playfair Display',serif", fontSize:"0.9rem", fontWeight:500, color:CLR.textPrimary, marginBottom:3, whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis" }}>{w.name}</div>
+              <div style={{ fontFamily:"'Manrope',sans-serif", fontSize:"0.9rem", fontWeight:500, color:CLR.textPrimary, marginBottom:3, whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis" }}>{w.name}</div>
               <div style={{ fontSize:"0.85rem", color:CLR.textMuted, marginBottom:7 }}>{[w.winery, w.year, w.country].filter(Boolean).join(" · ")}</div>
               <div style={{ display:"flex", flexWrap:"wrap", gap:6, alignItems:"center" }}>
                 <ColourPip colour={w.colour}/>
@@ -383,7 +383,7 @@ function InventoryView({ wines, onView }) {
               {w.bestBetween && <div style={{ fontSize:"0.7rem", color:CLR.textFaint, marginTop:5 }}>Drinking window: {w.bestBetween}</div>}
             </div>
             <div style={{ textAlign:"center", flexShrink:0, background:CLR.iconCircle, border:`0.5px solid ${CLR.border}`, borderRadius:10, padding:"7px 12px" }}>
-              <div style={{ fontFamily:"'Playfair Display',serif", fontSize:"1.5rem", fontWeight:600, color:CLR.forest, lineHeight:1 }}>{w.amount}</div>
+              <div style={{ fontFamily:"'Manrope',sans-serif", fontSize:"1.5rem", fontWeight:600, color:CLR.forest, lineHeight:1 }}>{w.amount}</div>
               <div style={{ fontSize:"0.58rem", color:CLR.textMuted, textTransform:"uppercase", letterSpacing:"0.07em", marginTop:2 }}>btl.</div>
             </div>
           </div>
@@ -433,17 +433,17 @@ function WishlistView({ wishlist, onView }) {
               <div style={{ flex:1, minWidth:0 }}>
                 <div style={{ display:"flex", alignItems:"center", gap:7, marginBottom:3 }}>
                   <span style={{ width:7, height:7, borderRadius:"50%", background:pr.dot, flexShrink:0, display:"inline-block" }}/>
-                  <div style={{ fontFamily:"'Playfair Display',serif", fontSize:"0.9rem", fontWeight:500, color:CLR.textPrimary, whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis" }}>{w.name || "Unbenannt"}</div>
+                  <div style={{ fontFamily:"'Manrope',sans-serif", fontSize:"0.9rem", fontWeight:500, color:CLR.textPrimary, whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis" }}>{w.name || "Unbenannt"}</div>
                 </div>
                 <div style={{ fontSize:"0.85rem", color:CLR.textMuted, marginBottom:7 }}>{[w.winery, w.year, w.country].filter(Boolean).join(" · ")}</div>
                 <div style={{ display:"flex", flexWrap:"wrap", gap:5, alignItems:"center" }}>
                   {w.colour && <ColourPip colour={w.colour}/>}
                   {w.grape && <span style={{ fontSize:"0.72rem", color:CLR.textFaint, fontStyle:"italic" }}>{w.grape}</span>}
-                  {w.price && <span style={{ fontSize:"0.8rem", color:CLR.forest, fontFamily:"'Playfair Display',serif", fontWeight:600, background:CLR.iconCircle, padding:"1px 8px", borderRadius:6, border:`0.5px solid ${CLR.border}` }}>{w.price}</span>}
+                  {w.price && <span style={{ fontSize:"0.8rem", color:CLR.forest, fontFamily:"'Manrope',sans-serif", fontWeight:600, background:CLR.iconCircle, padding:"1px 8px", borderRadius:6, border:`0.5px solid ${CLR.border}` }}>{w.price}</span>}
                 </div>
                 {w.tastingNotes && <div style={{ fontSize:"0.78rem", color:CLR.textFaint, fontStyle:"italic", marginTop:5, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>"{w.tastingNotes}"</div>}
               </div>
-              <div style={{ fontSize:"0.68rem", color:pr.color, fontFamily:"'Playfair Display',serif", whiteSpace:"nowrap", marginTop:2, flexShrink:0 }}>{pr.label}</div>
+              <div style={{ fontSize:"0.68rem", color:pr.color, fontFamily:"'Manrope',sans-serif", whiteSpace:"nowrap", marginTop:2, flexShrink:0 }}>{pr.label}</div>
             </div>
           </div>
         );
@@ -472,7 +472,7 @@ function AISearchPanel({ onApply, onDismiss }) {
         <div style={{ border:`0.5px solid ${CLR.border}`, borderRadius:12, overflow:"hidden", marginBottom:8, background:CLR.cardBg }}>
           {results.map((r, i) => (
             <div key={i} className="suggestion" onClick={() => { onApply(r); clear(); }}>
-              <div style={{ fontFamily:"'Playfair Display',serif", fontSize:"0.85rem", color:CLR.textPrimary, marginBottom:2 }}>{r.name}{r.year ? ` · ${r.year}` : ""}</div>
+              <div style={{ fontFamily:"'Manrope',sans-serif", fontSize:"0.85rem", color:CLR.textPrimary, marginBottom:2 }}>{r.name}{r.year ? ` · ${r.year}` : ""}</div>
               <div style={{ fontSize:"0.8rem", color:CLR.textMuted, marginBottom:3 }}>{[r.winery, r.country, r.region].filter(Boolean).join(" · ")}</div>
               <div style={{ display:"flex", gap:8, flexWrap:"wrap", alignItems:"center" }}>
                 {r.grape && <span style={{ fontSize:"0.72rem", color:CLR.textFaint, fontStyle:"italic" }}>{r.grape}</span>}
@@ -484,7 +484,7 @@ function AISearchPanel({ onApply, onDismiss }) {
           ))}
         </div>
       )}
-      <button onClick={onDismiss} style={{ background:"none", border:"none", color:CLR.textMuted, fontSize:"0.78rem", cursor:"pointer", fontFamily:"'Playfair Display',serif", textDecoration:"underline", padding:0 }}>
+      <button onClick={onDismiss} style={{ background:"none", border:"none", color:CLR.textMuted, fontSize:"0.78rem", cursor:"pointer", fontFamily:"'Manrope',sans-serif", textDecoration:"underline", padding:0 }}>
         → Enter manually without AI
       </button>
     </div>
@@ -520,14 +520,14 @@ function WineFormSheet({ title, init, onSave, onClose, isNew }) {
     <div className="sheet" onClick={e => { if (e.target === e.currentTarget) onClose(); }}>
       <div className="sheet-inner">
         <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", padding:"20px 20px 14px", borderBottom:`0.5px solid ${CLR.border}` }}>
-          <h2 style={{ fontFamily:"'Playfair Display',serif", fontSize:"1rem", color:CLR.forest, margin:0, letterSpacing:"0.05em" }}>{title}</h2>
+          <h2 style={{ fontFamily:"'Manrope',sans-serif", fontSize:"1rem", color:CLR.forest, margin:0, letterSpacing:"0.05em" }}>{title}</h2>
           <button onClick={onClose} style={{ background:"none", border:"none", color:CLR.textMuted, fontSize:"1.5rem", cursor:"pointer", padding:"0 4px" }}>×</button>
         </div>
 
         {showAI
           ? <AISearchPanel onApply={applyAI} onDismiss={() => setShowAI(false)}/>
           : (
-            <button onClick={() => setShowAI(true)} style={{ display:"flex", alignItems:"center", gap:8, margin:"12px 20px 0", background:CLR.iconCircle, border:`0.5px solid ${CLR.border}`, color:CLR.forest, borderRadius:10, padding:"9px 14px", cursor:"pointer", fontSize:"0.8rem", fontFamily:"'Playfair Display',serif", width:"calc(100% - 40px)" }}>
+            <button onClick={() => setShowAI(true)} style={{ display:"flex", alignItems:"center", gap:8, margin:"12px 20px 0", background:CLR.iconCircle, border:`0.5px solid ${CLR.border}`, color:CLR.forest, borderRadius:10, padding:"9px 14px", cursor:"pointer", fontSize:"0.8rem", fontFamily:"'Manrope',sans-serif", width:"calc(100% - 40px)" }}>
               <span style={{ fontSize:14 }}>✦</span> Open AI wine search
             </button>
           )
@@ -573,7 +573,7 @@ function WineDetailSheet({ wine, onEdit, onDelete, onDrink, onClose }) {
       <div className="sheet-inner">
         <div style={{ padding:"20px 20px 0", display:"flex", justifyContent:"space-between", alignItems:"flex-start" }}>
           <div style={{ flex:1, paddingRight:12 }}>
-            <div style={{ fontFamily:"'Playfair Display',serif", fontSize:"1.05rem", fontWeight:500, color:CLR.textPrimary, marginBottom:4, lineHeight:1.3 }}>{wine.name}</div>
+            <div style={{ fontFamily:"'Manrope',sans-serif", fontSize:"1.05rem", fontWeight:500, color:CLR.textPrimary, marginBottom:4, lineHeight:1.3 }}>{wine.name}</div>
             <div style={{ fontSize:"0.88rem", color:CLR.textMuted }}>{[wine.winery, wine.year].filter(Boolean).join(" · ")}</div>
           </div>
           <button onClick={onClose} style={{ background:"none", border:"none", color:CLR.textMuted, fontSize:"1.5rem", cursor:"pointer" }}>×</button>
@@ -640,14 +640,14 @@ function WishFormSheet({ title, init, onSave, onClose, isNew }) {
     <div className="sheet" onClick={e => { if (e.target === e.currentTarget) onClose(); }}>
       <div className="sheet-inner">
         <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", padding:"20px 20px 14px", borderBottom:`0.5px solid ${CLR.border}` }}>
-          <h2 style={{ fontFamily:"'Playfair Display',serif", fontSize:"1rem", color:CLR.forest, margin:0 }}>{title}</h2>
+          <h2 style={{ fontFamily:"'Manrope',sans-serif", fontSize:"1rem", color:CLR.forest, margin:0 }}>{title}</h2>
           <button onClick={onClose} style={{ background:"none", border:"none", color:CLR.textMuted, fontSize:"1.5rem", cursor:"pointer" }}>×</button>
         </div>
 
         {showAI
           ? <AISearchPanel onApply={applyAI} onDismiss={() => setShowAI(false)}/>
           : (
-            <button onClick={() => setShowAI(true)} style={{ display:"flex", alignItems:"center", gap:8, margin:"12px 20px 0", background:CLR.iconCircle, border:`0.5px solid ${CLR.border}`, color:CLR.forest, borderRadius:10, padding:"9px 14px", cursor:"pointer", fontSize:"0.8rem", fontFamily:"'Playfair Display',serif", width:"calc(100% - 40px)" }}>
+            <button onClick={() => setShowAI(true)} style={{ display:"flex", alignItems:"center", gap:8, margin:"12px 20px 0", background:CLR.iconCircle, border:`0.5px solid ${CLR.border}`, color:CLR.forest, borderRadius:10, padding:"9px 14px", cursor:"pointer", fontSize:"0.8rem", fontFamily:"'Manrope',sans-serif", width:"calc(100% - 40px)" }}>
               <span style={{ fontSize:14 }}>✦</span> Open AI wine search
             </button>
           )
@@ -701,7 +701,7 @@ function WishDetailSheet({ wish, onEdit, onDelete, onMove, onClose }) {
       <div className="sheet-inner">
         <div style={{ padding:"20px 20px 0", display:"flex", justifyContent:"space-between", alignItems:"flex-start" }}>
           <div style={{ flex:1, paddingRight:12 }}>
-            <div style={{ fontFamily:"'Playfair Display',serif", fontSize:"1.05rem", fontWeight:500, color:CLR.textPrimary, marginBottom:4 }}>{wish.name}</div>
+            <div style={{ fontFamily:"'Manrope',sans-serif", fontSize:"1.05rem", fontWeight:500, color:CLR.textPrimary, marginBottom:4 }}>{wish.name}</div>
             <div style={{ fontSize:"0.88rem", color:CLR.textMuted }}>{[wish.winery, wish.year].filter(Boolean).join(" · ")}</div>
           </div>
           <button onClick={onClose} style={{ background:"none", border:"none", color:CLR.textMuted, fontSize:"1.5rem", cursor:"pointer" }}>×</button>
@@ -709,8 +709,8 @@ function WishDetailSheet({ wish, onEdit, onDelete, onMove, onClose }) {
         <div style={{ padding:"14px 20px" }}>
           <div style={{ display:"flex", gap:8, marginBottom:12, flexWrap:"wrap", alignItems:"center" }}>
             {wish.colour && <ColourPip colour={wish.colour}/>}
-            <span style={{ fontSize:"0.75rem", color:pr.color, fontFamily:"'Playfair Display',serif" }}>● {pr.label}</span>
-            {wish.price && <span style={{ fontSize:"0.9rem", color:CLR.forest, fontFamily:"'Playfair Display',serif", fontWeight:600, background:CLR.iconCircle, padding:"2px 10px", borderRadius:7, border:`0.5px solid ${CLR.border}` }}>{wish.price}</span>}
+            <span style={{ fontSize:"0.75rem", color:pr.color, fontFamily:"'Manrope',sans-serif" }}>● {pr.label}</span>
+            {wish.price && <span style={{ fontSize:"0.9rem", color:CLR.forest, fontFamily:"'Manrope',sans-serif", fontWeight:600, background:CLR.iconCircle, padding:"2px 10px", borderRadius:7, border:`0.5px solid ${CLR.border}` }}>{wish.price}</span>}
           </div>
           <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:9, marginBottom:12 }}>
             {[["Country",wish.country],["Region",wish.region],["Grape",wish.grape]].filter(([,v])=>v).map(([l,v]) => (
@@ -755,7 +755,7 @@ function DrunkLogView({ drunkLog, onView }) {
     <>
       <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:16 }}>
         <div>
-          <div style={{ fontFamily:"'Playfair Display',serif", fontSize:"0.7rem", letterSpacing:"0.1em", color:CLR.textMuted, textTransform:"uppercase" }}>Graveyard</div>
+          <div style={{ fontFamily:"'Manrope',sans-serif", fontSize:"0.7rem", letterSpacing:"0.1em", color:CLR.textMuted, textTransform:"uppercase" }}>Graveyard</div>
           <div style={{ fontSize:"0.85rem", color:CLR.textFaint, marginTop:2 }}>{drunkLog.length} bottles consumed</div>
         </div>
       </div>
@@ -770,7 +770,7 @@ function DrunkLogView({ drunkLog, onView }) {
         <div key={e.id} className="card" onClick={() => onView(e)}>
           <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", gap:10 }}>
             <div style={{ flex:1, minWidth:0 }}>
-              <div style={{ fontFamily:"'Playfair Display',serif", fontSize:"0.9rem", fontWeight:500, color:CLR.textPrimary, marginBottom:2, whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis" }}>{e.name}</div>
+              <div style={{ fontFamily:"'Manrope',sans-serif", fontSize:"0.9rem", fontWeight:500, color:CLR.textPrimary, marginBottom:2, whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis" }}>{e.name}</div>
               <div style={{ fontSize:"0.82rem", color:CLR.textMuted, marginBottom:6 }}>{[e.winery, e.year, e.country].filter(Boolean).join(" · ")}</div>
               {e.rating && (
                 <div style={{ display:"flex", gap:2, marginBottom:5 }}>
@@ -814,7 +814,7 @@ function DrinkLogSheet({ wine, onSave, onClose }) {
       <div className="sheet-inner">
         <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", padding:"20px 20px 14px", borderBottom:`0.5px solid ${CLR.border}` }}>
           <div>
-            <h2 style={{ fontFamily:"'Playfair Display',serif", fontSize:"1rem", color:CLR.forest, margin:"0 0 3px", letterSpacing:"0.05em" }}>Drink this bottle</h2>
+            <h2 style={{ fontFamily:"'Manrope',sans-serif", fontSize:"1rem", color:CLR.forest, margin:"0 0 3px", letterSpacing:"0.05em" }}>Drink this bottle</h2>
             <div style={{ fontSize:"0.85rem", color:CLR.textMuted }}>{wine.name}{wine.year ? ` · ${wine.year}` : ""}</div>
           </div>
           <button onClick={onClose} style={{ background:"none", border:"none", color:CLR.textMuted, fontSize:"1.5rem", cursor:"pointer" }}>×</button>
@@ -832,7 +832,7 @@ function DrinkLogSheet({ wine, onSave, onClose }) {
               ))}
             </div>
             {form.rating && (
-              <button onClick={() => set("rating", "")} style={{ background:"none", border:"none", cursor:"pointer", fontSize:"0.73rem", color:CLR.textFaint, fontFamily:"'Playfair Display',serif", textDecoration:"underline", padding:0 }}>
+              <button onClick={() => set("rating", "")} style={{ background:"none", border:"none", cursor:"pointer", fontSize:"0.73rem", color:CLR.textFaint, fontFamily:"'Manrope',sans-serif", textDecoration:"underline", padding:0 }}>
                 Clear rating
               </button>
             )}
@@ -876,7 +876,7 @@ function DrunkEntrySheet({ entry, onDelete, onClose }) {
       <div className="sheet-inner">
         <div style={{ padding:"20px 20px 0", display:"flex", justifyContent:"space-between", alignItems:"flex-start" }}>
           <div style={{ flex:1, paddingRight:12 }}>
-            <div style={{ fontFamily:"'Playfair Display',serif", fontSize:"1.05rem", fontWeight:500, color:CLR.textPrimary, marginBottom:3, lineHeight:1.3 }}>{entry.name}</div>
+            <div style={{ fontFamily:"'Manrope',sans-serif", fontSize:"1.05rem", fontWeight:500, color:CLR.textPrimary, marginBottom:3, lineHeight:1.3 }}>{entry.name}</div>
             <div style={{ fontSize:"0.85rem", color:CLR.textMuted }}>{[entry.winery, entry.year].filter(Boolean).join(" · ")}</div>
           </div>
           <button onClick={onClose} style={{ background:"none", border:"none", color:CLR.textMuted, fontSize:"1.5rem", cursor:"pointer" }}>×</button>
