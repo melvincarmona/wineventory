@@ -14,9 +14,10 @@ const OCCASION = {
   red:    { label: "Rar/Festlich", dot: "#f87171", bg: "rgba(248,113,113,0.12)", border: "rgba(248,113,113,0.3)" },
 };
 const COLOUR = {
-  red:   { label: "Rot",   dot: "#7c1d1d" },
-  white: { label: "Weiss", dot: "#d4a84b" },
-  rosé:  { label: "Rosé",  dot: "#e879a0" },
+  red:      { label: "Rot",        dot: "#7c1d1d" },
+  white:    { label: "Weiss",      dot: "#d4a84b" },
+  rosé:     { label: "Rosé",       dot: "#e879a0" },
+  sparkling: { label: "Schaumwein", dot: "#a8d8ea" },
 };
 const BLANK_WINE = { name:"", colour:"red", year:"", winery:"", country:"", region:"", grape:"", amount:1, bestBetween:"", occasion:"green", rationale:"" };
 const BLANK_WISH = { name:"", colour:"red", year:"", winery:"", country:"", region:"", grape:"", price:"", priority:"medium", tastingNotes:"", notes:"" };
@@ -233,7 +234,7 @@ function InventoryView({ wines, onView }) {
 
       {/* Colour filter */}
       <div style={{ display: "flex", gap: 6, marginBottom: 8, overflowX: "auto", paddingBottom: 2 }}>
-        {[["all", "Alle Farben"], ["red", "🔴 Rot"], ["white", "⚪ Weiss"], ["rosé", "🩷 Rosé"]].map(([v, l]) => (
+        {[["all", "Alle Farben"], ["red", "🔴 Rot"], ["white", "⚪ Weiss"], ["rosé", "🩷 Rosé"], ["sparkling", "🫧 Schaum"]].map(([v, l]) => (
           <button key={v} onClick={() => setColFilter(v)} style={{ flex: "0 0 auto", padding: "5px 12px", borderRadius: 99, border: `1px solid ${colFilter === v ? "#c4a882" : "#3a2010"}`, background: colFilter === v ? "rgba(196,168,130,0.15)" : "transparent", color: colFilter === v ? "#c4a882" : "#6a4020", fontSize: "0.75rem", fontFamily: "'Cinzel',serif", cursor: "pointer", whiteSpace: "nowrap" }}>{l}</button>
         ))}
       </div>
@@ -414,7 +415,7 @@ function WineFormSheet({ title, init, onSave, onClose, isNew }) {
           <div>
             <label className="label">Farbe</label>
             <select value={form.colour} onChange={e => set("colour", e.target.value)}>
-              <option value="red">Rot</option><option value="white">Weiss</option><option value="rosé">Rosé</option>
+              <option value="red">Rot</option><option value="white">Weiss</option><option value="rosé">Rosé</option><option value="sparkling">Schaumwein</option>
             </select>
           </div>
           <div>
@@ -536,7 +537,7 @@ function WishFormSheet({ title, init, onSave, onClose, isNew }) {
           <div>
             <label className="label">Farbe</label>
             <select value={form.colour} onChange={e => set("colour", e.target.value)}>
-              <option value="red">Rot</option><option value="white">Weiss</option><option value="rosé">Rosé</option>
+              <option value="red">Rot</option><option value="white">Weiss</option><option value="rosé">Rosé</option><option value="sparkling">Schaumwein</option>
             </select>
           </div>
           <div>
