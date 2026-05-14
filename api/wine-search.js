@@ -13,44 +13,58 @@ module.exports = async function handler(req, res) {
 
     const message = await client.messages.create({
       model: "claude-haiku-4-5-20251001",
-      max_tokens: 1024,
+      max_tokens: 1500,
       messages: [
         {
           role: "user",
-          content: `Du bist ein Weinexperte. Suche nach Weinen passend zu: "${query}"
-        
-Antworte NUR mit einem JSON-Array mit 3-5 Weinvorschlägen. Kein Text davor oder danach.
-Format:
-[
-  {
-    "name": "Weinname",
-    "winery": "Weingut",
-    "year": 2020,
-    "colour": "red",
-    "country": "Italien",
-    "region": "Piemont",
-    "grape": "Nebbiolo",
-    "bestBetween": "2025-2035",
-    "falstaff_rating": 95,
-    "price": "CHF 45",
-    "description": "Kurze Beschreibung des Weins auf Deutsch"
-  }
-]
-
-Regeln:
-- colour muss sein: red, white, rosé oder sparkling
-- falstaff_rating: Falstaff Punkte (85-100) falls bekannt, sonst null
-- year als Zahl, nicht als String
-- Falls kein Jahrgang bekannt, null
-- Gib realistische, existierende Weine zurück`
+          content: `Du bist ein Weinexperte. Suche nach Weinen passend zu: "${query}". Antworte ausschliesslich mit rohem JSON, ohne Markdown, ohne Backticks, ohne Erklärungen. Nur das JSON-Array.`
+        },
+        {
+          role: "assistant",
+          content: "["
         }
       ]
     });
 
-    const text = message.content[0].text;
-    const clean = text.replace(/```json|```/g, "").trim();
-    const results = JSON.parse(clean);
-    res.json({ results });
+    const raw = "[" + message.content[0].text;
+    console.log("Raw response:", raw.substring(0, 200));
+
+    const clean = raw
+      .replace(/```json/g, "")
+      .replace(/```/g, "")
+      .trim();
+
+    let results;
+    try {
+      results = JSON.parse(clean);
+    } catch (parseError) {
+      console.error("Parse error:", parseError.message);
+      console.error("Raw text:", raw.substring(0, 500));
+      return res.json({ results: [] });
+    }
+
+    if (!Array.isArray(results)) {
+      console.error("Not an array:", typeof results);
+      return res.json({ results: [] });
+    }
+
+    // Sicherstellen dass alle Felder vorhanden sind
+    const sanitized = results.map(w => ({
+      name:            w.name            || "",
+      winery:          w.winery          || "",
+      year:            w.year            || null,
+      colour:          w.colour          || "red",
+      country:         w.country         || "",
+      region:          w.region          || "",
+      grape:           w.grape           || "",
+      bestBetween:     w.bestBetween     || "",
+      falstaff_rating: w.falstaff_rating || null,
+      price:           w.price           || "",
+      description:     w.description     || "",
+    }));
+
+    console.log("Results count:", sanitized.length);
+    res.json({ results: sanitized });
 
   } catch (error) {
     console.error("wine-search error:", error.message);
