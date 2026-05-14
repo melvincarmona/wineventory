@@ -1,11 +1,4 @@
 import { useState, useMemo, useEffect, useCallback } from "react";
-import { createClient } from "@supabase/supabase-js";
-
-// ── Supabase ────────────────────────────────────────────────────────────────
-const supabase = createClient(
-  process.env.REACT_APP_SUPABASE_URL,
-  process.env.REACT_APP_SUPABASE_ANON_KEY
-);
 
 // ── Design tokens ───────────────────────────────────────────────────────────
 const CLR = {
@@ -190,82 +183,101 @@ export default function App() {
 
   useEffect(() => { loadAll(); }, []);
 
-  async function loadAll() {
-    setLoading(true);
-    const [w, wl, dl] = await Promise.all([
-      supabase.from("wines").select("*").order("name"),
-      supabase.from("wishlist").select("*").order("name"),
-      supabase.from("drunk_log").select("*").order("drunk_at", { ascending: false }),
-    ]);
-    if (w.data) setWines(w.data);
-    if (wl.data) setWishlist(wl.data);
-    if (dl.data) setDrunkLog(dl.data);
-    setLoading(false);
-  }
+async function loadAll() {
+  setLoading(true);
+  const [w, wl, dl] = await Promise.all([
+    fetch("/api/wines").then(r => r.json()),
+    fetch("/api/wishlist").then(r => r.json()),
+    fetch("/api/drunk-log").then(r => r.json()),
+  ]);
+  setWines(Array.isArray(w) ? w : []);
+  setWishlist(Array.isArray(wl) ? wl : []);
+  setDrunkLog(Array.isArray(dl) ? dl : []);
+  setLoading(false);
+}
 
-  async function markAsDrunk(wine, logData) {
-    const entry = {
-      name:         wine.name,
-      colour:       wine.colour,
-      year:         wine.year,
-      winery:       wine.winery,
-      country:      wine.country,
-      region:       wine.region,
-      grape:        wine.grape,
-      occasion:     wine.occasion,
-      drunk_at:     new Date().toISOString().slice(0,10),
-      rating:       logData.rating ? Number(logData.rating) : null,
-      tasting_note: logData.tasting_note || null,
-    };
-    await supabase.from("drunk_log").insert([entry]);
-    const newAmount = Number(wine.amount) - 1;
-    if (newAmount <= 0) {
-      await supabase.from("wines").delete().eq("id", wine.id);
-    } else {
-      await supabase.from("wines").update({ amount: newAmount }).eq("id", wine.id);
-    }
-    await loadAll();
-    setModal(null);
-  }
+async function markAsDrunk(wine, logData) {
+  await fetch("/api/drink-wine", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ wine, logData }),
+  });
+  await loadAll();
+  setModal(null);
+}
 
-  async function deleteDrunkEntry(id) {
-    await supabase.from("drunk_log").delete().eq("id", id);
-    await loadAll();
-    setModal(null);
-  }
+async function deleteDrunkEntry(id) {
+  await fetch("/api/drunk-log", {
+    method: "DELETE",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ id }),
+  });
+  await loadAll();
+  setModal(null);
+}
 
-  async function saveWine(form, id) {
-    const p = { ...form, amount:Number(form.amount), year:Number(form.year) || null };
-    delete p.id;
-    if (id) await supabase.from("wines").update(p).eq("id", id);
-    else await supabase.from("wines").insert([p]);
-    await loadAll(); setModal(null);
-  }
+async function saveWine(form, id) {
+  const p = { ...form, amount: Number(form.amount), year: Number(form.year) || null };
+  delete p.id;
+  await fetch("/api/wines", {
+    method: id ? "PUT" : "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(id ? { ...p, id } : p),
+  });
+  await loadAll();
+  setModal(null);
+}
 
   async function deleteWine(id) {
-    await supabase.from("wines").delete().eq("id", id);
-    await loadAll(); setModal(null);
-  }
+  await fetch("/api/wines", {
+    method: "DELETE",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ id }),
+  });
+  await loadAll();
+  setModal(null);
+}
 
   async function saveWish(form, id) {
-    const p = { ...form, year:Number(form.year) || null };
-    delete p.id;
-    if (id) await supabase.from("wishlist").update(p).eq("id", id);
-    else await supabase.from("wishlist").insert([p]);
-    await loadAll(); setModal(null);
-  }
+  const p = { ...form, year: Number(form.year) || null };
+  delete p.id;
+  await fetch("/api/wishlist", {
+    method: id ? "PUT" : "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(id ? { ...p, id } : p),
+  });
+  await loadAll();
+  setModal(null);
+}
 
   async function deleteWish(id) {
-    await supabase.from("wishlist").delete().eq("id", id);
-    await loadAll(); setModal(null);
-  }
+  await fetch("/api/wishlist", {
+    method: "DELETE",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ id }),
+  });
+  await loadAll();
+  setModal(null);
+}
 
   async function moveToInventory(wish) {
-    const { id, price, priority, tastingNotes, notes, ...rest } = wish;
-    await supabase.from("wines").insert([{ ...rest, amount:1, occasion:"green", rationale:[tastingNotes, notes].filter(Boolean).join(" · ") }]);
-    await supabase.from("wishlist").delete().eq("id", id);
-    await loadAll(); setModal(null);
-  }
+  const { id, price, priority, tastingNotes, notes, ...rest } = wish;
+  await fetch("/api/wines", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      ...rest, amount: 1, occasion: "green",
+      rationale: [tastingNotes, notes].filter(Boolean).join(" · "),
+    }),
+  });
+  await fetch("/api/wishlist", {
+    method: "DELETE",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ id }),
+  });
+  await loadAll();
+  setModal(null);
+}
 
   return (
     <div style={{ fontFamily:"'Manrope',sans-serif", background:CLR.bg, minHeight:"100vh", color:CLR.textPrimary, maxWidth:480, margin:"0 auto" }}>
