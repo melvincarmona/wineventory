@@ -111,7 +111,7 @@ const Spinner = () => (
 );
 
 // ── Clickable StatCard ──────────────────────────────────────────────────────
-const StatCard = ({ icon, value, label, valueColor, onClick, isActive }) => (
+const StatCard = ({ icon, value, label, valueColor, onClick, isActive, iconBg, iconColor }) => (
   <div
     onClick={onClick}
     style={{
@@ -127,12 +127,14 @@ const StatCard = ({ icon, value, label, valueColor, onClick, isActive }) => (
       boxShadow: isActive ? `0 2px 10px rgba(26,77,40,0.18)` : "none",
     }}
   >
-    <div style={{ width:26, height:26, borderRadius:"50%", background: isActive ? "rgba(255,255,255,0.18)" : CLR.iconCircle, display:"flex", alignItems:"center", justifyContent:"center", margin:"0 auto 4px" }}>
-      {/* Re-render icon with white color when active */}
-      {onClick && isActive
-        ? <span style={{ filter:"brightness(10)" }}>{icon}</span>
-        : icon
-      }
+    <div style={{
+      width:26, height:26, borderRadius:"50%",
+      background: isActive ? "rgba(255,255,255,0.18)" : (iconBg || CLR.iconCircle),
+      display:"flex", alignItems:"center", justifyContent:"center", margin:"0 auto 4px"
+    }}>
+      <span style={{ filter: isActive ? "brightness(10)" : "none", display:"flex" }}>
+        {icon}
+      </span>
     </div>
     <div style={{ fontFamily:"'Manrope',sans-serif", fontSize:"1.2rem", fontWeight:600, color: isActive ? "#fff" : (valueColor || CLR.textPrimary), lineHeight:1 }}>{value}</div>
     <div style={{ fontSize:"0.6rem", color: isActive ? "rgba(255,255,255,0.7)" : CLR.textFaint, textTransform:"uppercase", letterSpacing:"0.05em", marginTop:3 }}>{label}</div>
@@ -393,38 +395,40 @@ function InventoryView({ wines, onView }) {
     <>
       {/* Stats — clickable */}
       <div style={{ display:"flex", gap:8, marginBottom:14 }}>
-        <StatCard
-          icon={<IconBottle size={13}/>}
-          value={total}
-          label="Bottles"
-          // Bottles card is not a filter, just informational
-        />
-        <StatCard
-          icon={<IconSun size={13}/>}
-          value={wines.filter(w=>w.occasion==="green").length}
-          label="Everyday"
-          valueColor={CLR.forestMid}
-          onClick={() => handleStatClick("green")}
-          isActive={occFilter === "green"}
-        />
-        <StatCard
-          icon={<IconStar size={13}/>}
-          value={wines.filter(w=>w.occasion==="orange").length}
-          label="Special"
-          valueColor="#d07820"
-          onClick={() => handleStatClick("orange")}
-          isActive={occFilter === "orange"}
-        />
-        <StatCard
-          icon={<IconDiamond size={13}/>}
-          value={wines.filter(w=>w.occasion==="red").length}
-          label="Diamonds"
-          valueColor="#c03030"
-          onClick={() => handleStatClick("red")}
-          isActive={occFilter === "red"}
-        />
-      </div>
-
+  <StatCard
+    icon={<IconBottle size={13} color="#1a4d28"/>}
+    value={total}
+    label="Bottles"
+    iconBg="#e0f2e4"
+  />
+  <StatCard
+    icon={<IconSun size={13} color="#2d9e50"/>}
+    value={wines.filter(w=>w.occasion==="green").length}
+    label="Everyday"
+    valueColor={CLR.forestMid}
+    iconBg="rgba(45,158,80,0.15)"
+    onClick={() => handleStatClick("green")}
+    isActive={occFilter === "green"}
+  />
+  <StatCard
+    icon={<IconStar size={13} color="#d07820"/>}
+    value={wines.filter(w=>w.occasion==="orange").length}
+    label="Special"
+    valueColor="#d07820"
+    iconBg="rgba(208,120,32,0.15)"
+    onClick={() => handleStatClick("orange")}
+    isActive={occFilter === "orange"}
+  />
+  <StatCard
+    icon={<IconDiamond size={13} color="#c03030"/>}
+    value={wines.filter(w=>w.occasion==="red").length}
+    label="Diamonds"
+    valueColor="#c03030"
+    iconBg="rgba(192,48,48,0.15)"
+    onClick={() => handleStatClick("red")}
+    isActive={occFilter === "red"}
+  />
+</div>
       {/* Active filter hint */}
       {occFilter !== "all" && (
         <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:8, padding:"6px 12px", background:CLR.iconCircle, border:`0.5px solid ${CLR.border}`, borderRadius:10, fontSize:"0.76rem", color:CLR.forest, fontFamily:"'Manrope',sans-serif" }}>
@@ -467,6 +471,11 @@ function InventoryView({ wines, onView }) {
                 {w.grape && <span style={{ fontSize:"0.72rem", color:CLR.textFaint, fontStyle:"italic" }}>{w.grape}</span>}
               </div>
               {w.bestBetween && <div style={{ fontSize:"0.7rem", color:CLR.textFaint, marginTop:5 }}>Drinking window: {w.bestBetween}</div>}
+              {w.falstaff_rating && (
+  <div style={{ fontSize:"0.7rem", color:"#8B0000", marginTop:3, fontWeight:600 }}>
+    🏆 Falstaff: {w.falstaff_rating} Pkt.
+  </div>
+)}
             </div>
             {/* ── Bottle icons instead of plain number ── */}
             <div style={{ textAlign:"center", flexShrink:0, background:CLR.iconCircle, border:`0.5px solid ${CLR.border}`, borderRadius:10, padding:"8px 10px", minWidth:52, display:"flex", flexDirection:"column", alignItems:"center", gap:4 }}>
@@ -621,7 +630,7 @@ function WineFormSheet({ title, init, onSave, onClose, isNew }) {
         }
 
         <div style={{ padding:"14px 20px", display:"grid", gap:11 }}>
-          {[["Name","name","text"],["Winery","winery","text"],["Vintage","year","number"],["Country","country","text"],["Region / Appellation","region","text"],["Grape(s)","grape","text"],["Bottles","amount","number"],["Drinking window (e.g. 2025–2032)","bestBetween","text"]].map(([l,k,t]) => (
+          {[["Name","name","text"],["Winery","winery","text"],["Vintage","year","number"],["Country","country","text"],["Region / Appellation","region","text"],["Grape(s)","grape","text"],["Bottles","amount","number"],["Drinking window (e.g. 2025–2032)","bestBetween","text"], ["Falstaff Punkte (optional)","falstaff_rating","number"]].map(([l,k,t]) => (
             <div key={k}><label className="label">{l}</label><input type={t} value={form[k]||""} onChange={e => set(k, e.target.value)}/></div>
           ))}
           <div>
@@ -670,7 +679,14 @@ function WineDetailSheet({ wine, onEdit, onDelete, onDrink, onClose }) {
             <ColourPip colour={wine.colour}/><Badge occasion={wine.occasion}/>
           </div>
           <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:10, marginBottom:14 }}>
-            {[["Country",wine.country],["Region",wine.region],["Grape",wine.grape],["Drinking window",wine.bestBetween],["Bottles",wine.amount]].filter(([,v])=>v).map(([l,v]) => (
+            {[
+  ["Country",wine.country],
+  ["Region",wine.region],
+  ["Grape",wine.grape],
+  ["Drinking window",wine.bestBetween],
+  ["Bottles",wine.amount],
+  ["Falstaff",wine.falstaff_rating ? `${wine.falstaff_rating} Punkte` : null],
+].filter(([,v])=>v).map(([l,v]) => (
               <div key={l} style={{ background:CLR.iconCircle, border:`0.5px solid ${CLR.border}`, borderRadius:9, padding:"9px 12px" }}>
                 <div className="label" style={{ marginBottom:3 }}>{l}</div>
                 <div style={{ color:CLR.textPrimary, fontSize:"0.92rem" }}>{v}</div>
