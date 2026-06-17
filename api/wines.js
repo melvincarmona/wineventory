@@ -1,7 +1,9 @@
 import { neon } from '@neondatabase/serverless';
+import { requireAuth } from './_auth.js';
 const sql = neon(process.env.DATABASE_URL);
 
 export default async function handler(req, res) {
+  if (!requireAuth(req, res)) return;
   if (req.method === 'GET') {
     const data = await sql`SELECT * FROM wines ORDER BY name`;
     return res.json(data);

@@ -1,7 +1,9 @@
 const Anthropic = require("@anthropic-ai/sdk");
+const { requireAuth } = require('./_auth');
 
 module.exports = async function handler(req, res) {
   if (req.method !== "POST") return res.status(405).end();
+  if (!requireAuth(req, res)) return;
 
   try {
     const { query } = req.body;
@@ -68,6 +70,6 @@ module.exports = async function handler(req, res) {
 
   } catch (error) {
     console.error("wine-search error:", error.message);
-    res.status(500).json({ error: error.message, results: [] });
+    res.status(500).json({ error: 'Internal server error', results: [] });
   }
 };

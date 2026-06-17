@@ -1,6 +1,8 @@
 const { neon } = require('@neondatabase/serverless');
+const { requireAuth } = require('./_auth');
 
 module.exports = async function handler(req, res) {
+  if (!requireAuth(req, res)) return;
   const sql = neon(process.env.DATABASE_URL);
 
   if (req.method === 'GET') {

@@ -1,4 +1,16 @@
-import { useState, useMemo, useEffect, useCallback } from "react";
+import { useState, useMemo, useEffect, useCallback, useRef } from "react";
+
+// ── Auth helper ─────────────────────────────────────────────────────────────
+const STORAGE_KEY = 'wineventory_api_key';
+
+async function apiFetch(url, options = {}) {
+  const key = localStorage.getItem(STORAGE_KEY) || '';
+  const res = await fetch(url, {
+    ...options,
+    headers: { 'Content-Type': 'application/json', 'X-Api-Key': key, ...options.headers },
+  });
+  return res;
+}
 
 // ── Design tokens ───────────────────────────────────────────────────────────
 const CLR = {
@@ -152,7 +164,7 @@ function useAISearch() {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch("/api/wine-search", {
+      const res = await apiFetch("/api/wine-search", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ query: q }),
@@ -174,6 +186,46 @@ function useAISearch() {
   return { results, loading, error, search, clear: () => { setResults([]); setError(null); } };
 }
 
+// ── Unlock Screen ────────────────────────────────────────────────────────────
+function UnlockScreen({ onUnlock }) {
+  const [key, setKey] = useState('');
+  const [error, setError] = useState(false);
+  const inputRef = useRef(null);
+
+  useEffect(() => { inputRef.current?.focus(); }, []);
+
+  async function handleSubmit(e) {
+    e.preventDefault();
+    const trimmed = key.trim();
+    if (!trimmed) return;
+    // Probe the API with the supplied key before storing it.
+    const res = await fetch('/api/wines', { headers: { 'X-Api-Key': trimmed } });
+    if (res.status === 401) { setError(true); setKey(''); return; }
+    setError(false);
+    onUnlock(trimmed);
+  }
+
+  return (
+    <div style={{ fontFamily:"'Manrope',sans-serif", background:CLR.bg, minHeight:"100vh", display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", padding:32 }}>
+      <div style={{ fontSize:"3rem", marginBottom:16 }}>🍷</div>
+      <h1 style={{ fontSize:"1.4rem", fontWeight:600, color:CLR.forest, letterSpacing:"0.12em", textTransform:"uppercase", margin:"0 0 8px" }}>WINEVENTORY</h1>
+      <p style={{ color:CLR.textMuted, fontSize:"0.85rem", marginBottom:32, textAlign:"center" }}>Enter your API key to access your cellar.</p>
+      <form onSubmit={handleSubmit} style={{ width:"100%", maxWidth:340 }}>
+        <input
+          ref={inputRef}
+          type="password"
+          placeholder="API key"
+          value={key}
+          onChange={e => { setKey(e.target.value); setError(false); }}
+          style={{ marginBottom:12, textAlign:"center", letterSpacing:"0.05em" }}
+        />
+        {error && <p style={{ color:"#c03030", fontSize:"0.8rem", textAlign:"center", marginBottom:12 }}>Incorrect key. Please try again.</p>}
+        <button type="submit" className="btn btn-primary" style={{ width:"100%", fontSize:"0.85rem" }}>Unlock</button>
+      </form>
+    </div>
+  );
+}
+
 // ── Main App ────────────────────────────────────────────────────────────────
 export default function App() {
   const [tab, setTab] = useState("inventory");
@@ -182,16 +234,34 @@ export default function App() {
   const [drunkLog, setDrunkLog] = useState([]);
   const [loading, setLoading] = useState(true);
   const [modal, setModal] = useState(null);
+  const [locked, setLocked] = useState(!localStorage.getItem(STORAGE_KEY));
 
-  useEffect(() => { loadAll(); }, []);
+  useEffect(() => { if (!locked) loadAll(); }, [locked]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  function unlock(key) {
+    localStorage.setItem(STORAGE_KEY, key);
+    setLocked(false);
+  }
+
+  function lockApp() {
+    localStorage.removeItem(STORAGE_KEY);
+    setLocked(true);
+  }
+
+  async function handleResponse(res) {
+    if (res.status === 401) { lockApp(); throw new Error('Unauthorized'); }
+    return res.json();
+  }
 
 async function loadAll() {
   setLoading(true);
-  const [w, wl, dl] = await Promise.all([
-    fetch("/api/wines").then(r => r.json()),
-    fetch("/api/wishlist").then(r => r.json()),
-    fetch("/api/drunk-log").then(r => r.json()),
+  const [wRes, wlRes, dlRes] = await Promise.all([
+    apiFetch("/api/wines"),
+    apiFetch("/api/wishlist"),
+    apiFetch("/api/drunk-log"),
   ]);
+  if (wRes.status === 401) { lockApp(); setLoading(false); return; }
+  const [w, wl, dl] = await Promise.all([wRes.json(), wlRes.json(), dlRes.json()]);
   setWines(Array.isArray(w) ? w : []);
   setWishlist(Array.isArray(wl) ? wl : []);
   setDrunkLog(Array.isArray(dl) ? dl : []);
@@ -199,21 +269,19 @@ async function loadAll() {
 }
 
 async function markAsDrunk(wine, logData) {
-  await fetch("/api/drink-wine", {
+  await handleResponse(await apiFetch("/api/drink-wine", {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ wine, logData }),
-  });
+  }));
   await loadAll();
   setModal(null);
 }
 
 async function deleteDrunkEntry(id) {
-  await fetch("/api/drunk-log", {
+  await handleResponse(await apiFetch("/api/drunk-log", {
     method: "DELETE",
-    headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ id }),
-  });
+  }));
   await loadAll();
   setModal(null);
 }
@@ -221,21 +289,19 @@ async function deleteDrunkEntry(id) {
 async function saveWine(form, id) {
   const p = { ...form, amount: Number(form.amount), year: Number(form.year) || null };
   delete p.id;
-  await fetch("/api/wines", {
+  await handleResponse(await apiFetch("/api/wines", {
     method: id ? "PUT" : "POST",
-    headers: { "Content-Type": "application/json" },
     body: JSON.stringify(id ? { ...p, id } : p),
-  });
+  }));
   await loadAll();
   setModal(null);
 }
 
   async function deleteWine(id) {
-  await fetch("/api/wines", {
+  await handleResponse(await apiFetch("/api/wines", {
     method: "DELETE",
-    headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ id }),
-  });
+  }));
   await loadAll();
   setModal(null);
 }
@@ -243,43 +309,41 @@ async function saveWine(form, id) {
   async function saveWish(form, id) {
   const p = { ...form, year: Number(form.year) || null };
   delete p.id;
-  await fetch("/api/wishlist", {
+  await handleResponse(await apiFetch("/api/wishlist", {
     method: id ? "PUT" : "POST",
-    headers: { "Content-Type": "application/json" },
     body: JSON.stringify(id ? { ...p, id } : p),
-  });
+  }));
   await loadAll();
   setModal(null);
 }
 
   async function deleteWish(id) {
-  await fetch("/api/wishlist", {
+  await handleResponse(await apiFetch("/api/wishlist", {
     method: "DELETE",
-    headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ id }),
-  });
+  }));
   await loadAll();
   setModal(null);
 }
 
   async function moveToInventory(wish) {
   const { id, price, priority, tastingNotes, notes, ...rest } = wish;
-  await fetch("/api/wines", {
+  await handleResponse(await apiFetch("/api/wines", {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
       ...rest, amount: 1, occasion: "green",
       rationale: [tastingNotes, notes].filter(Boolean).join(" · "),
     }),
-  });
-  await fetch("/api/wishlist", {
+  }));
+  await handleResponse(await apiFetch("/api/wishlist", {
     method: "DELETE",
-    headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ id }),
-  });
+  }));
   await loadAll();
   setModal(null);
 }
+
+  if (locked) return <UnlockScreen onUnlock={unlock} />;
 
   return (
     <div style={{ fontFamily:"'Manrope',sans-serif", background:CLR.bg, minHeight:"100vh", color:CLR.textPrimary, maxWidth:480, margin:"0 auto" }}>
@@ -325,10 +389,17 @@ async function saveWine(form, id) {
                 WINEVENTORY
               </h1>
             </div>
-            <button
-              onClick={() => setModal({ type: tab === "inventory" ? "addWine" : tab === "wishlist" ? "addWish" : "addWine", payload:null })}
-              style={{ width:44, height:44, borderRadius:"50%", background:"rgba(255,255,255,0.14)", border:"1px solid rgba(255,255,255,0.22)", color:"#fff", fontSize:"1.5rem", cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0, marginBottom:4 }}
-            >+</button>
+            <div style={{ display:"flex", gap:8 }}>
+              <button
+                onClick={lockApp}
+                title="Lock app"
+                style={{ width:44, height:44, borderRadius:"50%", background:"rgba(255,255,255,0.10)", border:"1px solid rgba(255,255,255,0.18)", color:"rgba(255,255,255,0.7)", fontSize:"1.1rem", cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0, marginBottom:4 }}
+              >🔒</button>
+              <button
+                onClick={() => setModal({ type: tab === "inventory" ? "addWine" : tab === "wishlist" ? "addWish" : "addWine", payload:null })}
+                style={{ width:44, height:44, borderRadius:"50%", background:"rgba(255,255,255,0.14)", border:"1px solid rgba(255,255,255,0.22)", color:"#fff", fontSize:"1.5rem", cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0, marginBottom:4 }}
+              >+</button>
+            </div>
           </div>
         </div>
         {/* Tabs */}
