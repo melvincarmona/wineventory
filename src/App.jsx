@@ -645,8 +645,10 @@ function AISearchPanel({ onApply, onDismiss }) {
                 {r.grape && <span style={{ fontSize:"0.72rem", color:CLR.textFaint, fontStyle:"italic" }}>{r.grape}</span>}
                 {r.price && <span style={{ fontSize:"0.75rem", color:CLR.forest, fontWeight:600 }}>{r.price}</span>}
                 {r.bestBetween && <span style={{ fontSize:"0.72rem", color:CLR.textFaint }}>Drinking window: {r.bestBetween}</span>}
+                {r.falstaff_rating && <span style={{ fontSize:"0.72rem", color:"#8B0000", fontWeight:600 }}>🏆 Falstaff {r.falstaff_rating} Pkt.</span>}
               </div>
               {r.description && <div style={{ fontSize:"0.78rem", color:CLR.textMuted, marginTop:4, fontStyle:"italic", lineHeight:1.4 }}>{r.description}</div>}
+              {r.awards && <div style={{ fontSize:"0.75rem", color:CLR.textFaint, marginTop:3, lineHeight:1.4 }}>🥇 {r.awards}</div>}
             </div>
           ))}
         </div>
@@ -668,15 +670,16 @@ function WineFormSheet({ title, init, onSave, onClose, isNew }) {
   function applyAI(r) {
     setForm(f => ({
       ...f,
-      name:        r.name        || f.name,
-      winery:      r.winery      || f.winery,
-      year:        r.year        || f.year,
-      colour:      r.colour      || f.colour,
-      country:     r.country     || f.country,
-      region:      r.region      || f.region,
-      grape:       r.grape       || f.grape,
-      bestBetween: r.bestBetween || f.bestBetween,
-      rationale:   r.description || f.rationale,
+      name:            r.name            || f.name,
+      winery:          r.winery          || f.winery,
+      year:            r.year            || f.year,
+      colour:          r.colour          || f.colour,
+      country:         r.country         || f.country,
+      region:          r.region          || f.region,
+      grape:           r.grape           || f.grape,
+      bestBetween:     r.bestBetween     || f.bestBetween,
+      falstaff_rating: r.falstaff_rating || f.falstaff_rating,
+      rationale:       [r.description, r.awards].filter(Boolean).join("\n\n") || f.rationale,
     }));
     setShowAI(false);
   }
@@ -795,15 +798,16 @@ function WishFormSheet({ title, init, onSave, onClose, isNew }) {
   function applyAI(r) {
     setForm(f => ({
       ...f,
-      name:    r.name    || f.name,
-      winery:  r.winery  || f.winery,
-      year:    r.year    || f.year,
-      colour:  r.colour  || f.colour,
-      country: r.country || f.country,
-      region:  r.region  || f.region,
-      grape:   r.grape   || f.grape,
-      price:   r.price   || f.price,
-      notes:   r.description || f.notes,
+      name:         r.name         || f.name,
+      winery:       r.winery       || f.winery,
+      year:         r.year         || f.year,
+      colour:       r.colour       || f.colour,
+      country:      r.country      || f.country,
+      region:       r.region       || f.region,
+      grape:        r.grape        || f.grape,
+      price:        r.price        || f.price,
+      tastingNotes: r.awards       || f.tastingNotes,
+      notes:        [r.description, r.bestBetween ? `Drinking window: ${r.bestBetween}` : ""].filter(Boolean).join("\n") || f.notes,
     }));
     setShowAI(false);
   }
