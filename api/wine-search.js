@@ -1,7 +1,7 @@
 const Anthropic = require("@anthropic-ai/sdk");
 const { requireAuth } = require('./_auth');
 
-const MAX_ITERATIONS = 12;
+const MAX_CONTINUATIONS = 5;
 
 const SYSTEM_PROMPT = `You are a wine expert with access to web search. Search for real, accurate wine information including current Falstaff ratings, awards, and reviews.
 
@@ -36,13 +36,10 @@ module.exports = async function handler(req, res) {
       }
     ];
 
-    let iterations = 0;
     let finalText = null;
 
-    while (iterations < MAX_ITERATIONS) {
-      iterations++;
-
-      const response = await client.messages.create({
+    for (let i = 0; i < MAX_CONTINUATIONS; i++) {
+      const stream = client.messages.stream({
         model: "claude-opus-4-8",
         max_tokens: 4000,
         system: SYSTEM_PROMPT,
@@ -50,6 +47,7 @@ module.exports = async function handler(req, res) {
         messages,
       });
 
+      const response = await stream.finalMessage();
       messages.push({ role: "assistant", content: response.content });
 
       if (response.stop_reason === "end_turn") {
@@ -61,11 +59,12 @@ module.exports = async function handler(req, res) {
       }
 
       if (response.stop_reason === "pause_turn") {
-        messages.push({ role: "user", content: "Continue and provide the final JSON array." });
+        // Server-side tool loop hit its limit — re-send without adding a new user message.
+        // The trailing server_tool_use block tells the API to resume automatically.
         continue;
       }
 
-      // tool_use or other stop reasons — extract any text we have
+      // Unexpected stop reason — grab any text and exit
       const textBlocks = response.content.filter(b => b.type === "text");
       if (textBlocks.length > 0) {
         finalText = textBlocks[textBlocks.length - 1].text;
