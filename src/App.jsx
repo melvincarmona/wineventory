@@ -76,18 +76,37 @@ const IconSearch = ({ size=12, color=CLR.forest }) => (
   </svg>
 );
 
-// ── Wine Bottle Emoji Icons ─────────────────────────────────────────────────
-// Renders N wine bottle emojis for amount in inventory cards
-const BottleIcons = ({ amount }) => {
+// ── Wine Glass SVG Icon ──────────────────────────────────────────────────────
+const WineGlassIcon = ({ colour = "red", size = 14 }) => {
+  const fills = { red: "#c03030", white: "#d4b44a", rosé: "#d97890", sparkling: "#e0e0aa" };
+  const fill = fills[colour] || fills.red;
+  const isSparkling = colour === "sparkling";
+  return (
+    <svg width={size} height={Math.round(size * 1.5)} viewBox="0 0 14 21" xmlns="http://www.w3.org/2000/svg" style={{ display:"block" }}>
+      <path d="M2,2 Q2,12 7,13 Q12,12 12,2 Z" fill={fill} opacity="0.9"/>
+      <path d="M2,2 Q2,12 7,13 Q12,12 12,2 Z" fill="none" stroke="currentColor" strokeWidth="0.7" opacity="0.25"/>
+      <line x1="7" y1="13" x2="7" y2="18" stroke="currentColor" strokeWidth="1" opacity="0.3"/>
+      <rect x="3.5" y="18" width="7" height="1.5" rx="0.75" fill="currentColor" opacity="0.3"/>
+      {isSparkling && <>
+        <circle cx="7"   cy="11.5" r="0.7"  fill="white" opacity="0.75"/>
+        <circle cx="5.5" cy="9.5"  r="0.55" fill="white" opacity="0.65"/>
+        <circle cx="8.5" cy="8.5"  r="0.55" fill="white" opacity="0.65"/>
+        <circle cx="7"   cy="6.5"  r="0.5"  fill="white" opacity="0.6"/>
+      </>}
+    </svg>
+  );
+};
+
+// ── Wine Glass Icons for inventory cards ────────────────────────────────────
+const BottleIcons = ({ amount, colour = "red" }) => {
   const count = Number(amount) || 0;
-  // Show max 8 icons to avoid overflow, then show "+N"
   const MAX_SHOW = 8;
   const shown = Math.min(count, MAX_SHOW);
   const extra = count - MAX_SHOW;
   return (
     <div style={{ display:"flex", flexWrap:"wrap", gap:1, alignItems:"center", justifyContent:"center", maxWidth:80 }}>
       {Array.from({ length: shown }).map((_, i) => (
-        <span key={i} style={{ fontSize:"0.9rem", lineHeight:1 }}>🍷</span>
+        <WineGlassIcon key={i} colour={colour} size={14}/>
       ))}
       {extra > 0 && (
         <span style={{ fontSize:"0.6rem", color:CLR.textMuted, fontFamily:"'Manrope',sans-serif", fontWeight:600 }}>+{extra}</span>
@@ -550,7 +569,7 @@ function InventoryView({ wines, onView }) {
             </div>
             {/* ── Bottle icons instead of plain number ── */}
             <div style={{ textAlign:"center", flexShrink:0, background:CLR.iconCircle, border:`0.5px solid ${CLR.border}`, borderRadius:10, padding:"8px 10px", minWidth:52, display:"flex", flexDirection:"column", alignItems:"center", gap:4 }}>
-              <BottleIcons amount={w.amount} />
+              <BottleIcons amount={w.amount} colour={w.colour} />
               <div style={{ fontSize:"0.58rem", color:CLR.textMuted, textTransform:"uppercase", letterSpacing:"0.07em" }}>{w.amount} btl.</div>
             </div>
           </div>
